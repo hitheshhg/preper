@@ -143,7 +143,7 @@ export default function ProfilePage() {
 
       if (res.success) {
         setSuccessMsg('Profile changes saved successfully.');
-        setCompletionPercent(res.profile.completionPercent);
+        setCompletionPercent(res.profile.completionPercent ?? 0);
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to update profile.');

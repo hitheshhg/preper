@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db/client';
 import { hashPassword, verifyPassword } from '@/lib/auth/password';
 import { createSessionToken, setSessionCookie, clearSessionCookie, getSession, SessionUser } from '@/lib/auth/session';
 import { isDatabaseConfigured } from '@/lib/config/env';
+import { devDb } from '@/lib/db/dev-store';
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -33,37 +34,60 @@ export async function registerAction(formData: FormData): Promise<AuthResult> {
     return { success: false, error: validation.error.issues[0]?.message || 'Invalid registration data' };
   }
 
-  if (!isDatabaseConfigured) {
-    // If PostgreSQL database is not connected yet, return clear guidance
-    return {
-      success: false,
-      error: 'Database connection is not configured yet. Please configure DATABASE_URL in .env.local to enable account registration.',
-    };
-  }
-
   try {
-    const existing = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
-    if (existing) {
-      return { success: false, error: 'An account with this email already exists' };
-    }
+    let user: any = null;
 
-    const passwordHash = await hashPassword(password);
-    const user = await prisma.user.create({
-      data: {
+    try {
+      const existing = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+      if (existing) {
+        return { success: false, error: 'An account with this email already exists' };
+      }
+
+      const passwordHash = await hashPassword(password);
+      user = await prisma.user.create({
+        data: {
+          name,
+          email: email.toLowerCase(),
+          passwordHash,
+          role: 'USER',
+          profile: {
+            create: {
+              fullName: name,
+              targetRole: 'Software Development Engineer',
+              experienceLevel: 'Fresher',
+              dailyGoalMinutes: 20,
+            },
+          },
+        },
+      });
+    } catch (dbErr) {
+      console.warn('[Prepr Auth] Database offline or unconfigured, using persistent dev store:', dbErr);
+      const existing = devDb.findUserByEmail(email);
+      if (existing) {
+        return { success: false, error: 'An account with this email already exists' };
+      }
+      const passwordHash = await hashPassword(password);
+      user = devDb.createUser({
+        id: `usr_${Date.now()}`,
         name,
         email: email.toLowerCase(),
         passwordHash,
         role: 'USER',
+        createdAt: new Date().toISOString(),
         profile: {
-          create: {
-            fullName: name,
-            targetRole: 'Software Development Engineer',
-            experienceLevel: 'Fresher',
-            dailyGoalMinutes: 20,
-          },
+          targetRole: 'Software Development Engineer',
+          experienceLevel: 'Fresher',
+          dailyGoalMinutes: 20,
+          completionPercent: 20,
         },
-      },
-    });
+      });
+      devDb.logAudit({
+        actorId: user.id,
+        action: 'USER_REGISTERED',
+        resource: 'User',
+        metadata: { email: user.email },
+      });
+    }
 
     const sessionUser: SessionUser = {
       id: user.id,
@@ -91,15 +115,19 @@ export async function loginAction(formData: FormData): Promise<AuthResult> {
     return { success: false, error: validation.error.issues[0]?.message || 'Invalid login data' };
   }
 
-  if (!isDatabaseConfigured) {
-    return {
-      success: false,
-      error: 'Database connection is not configured yet. Please configure DATABASE_URL in .env.local to enable user sign-in.',
-    };
-  }
-
   try {
-    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+    let user: any = null;
+    try {
+      user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+    } catch (dbErr) {
+      console.warn('[Prepr Auth] Database offline, checking dev store');
+      user = devDb.findUserByEmail(email);
+    }
+
+    if (!user) {
+      user = devDb.findUserByEmail(email);
+    }
+
     if (!user || !user.passwordHash) {
       return { success: false, error: 'Invalid email or password' };
     }
@@ -122,14 +150,45 @@ export async function loginAction(formData: FormData): Promise<AuthResult> {
     return { success: true, user: sessionUser };
   } catch (err: any) {
     console.error('Login error:', err);
-    return { success: false, error: 'Authentication failed due to a server error.' };
+    return { success: false, error: 'Login failed due to a server error. Please try again.' };
   }
 }
 
-export async function logoutAction(): Promise<void> {
+export async function logoutAction() {
   await clearSessionCookie();
+  return { success: true };
 }
 
 export async function getCurrentUser(): Promise<SessionUser | null> {
-  return getSession();
+  const session = await getSession();
+  if (!session) return null;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: session.id },
+      select: { id: true, email: true, name: true, role: true },
+    });
+    if (user) {
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      };
+    }
+  } catch (err) {
+    // Database connection error, fallback to session or dev store
+  }
+
+  const devUser = devDb.findUserById(session.id);
+  if (devUser) {
+    return {
+      id: devUser.id,
+      email: devUser.email,
+      name: devUser.name,
+      role: devUser.role,
+    };
+  }
+
+  return session;
 }
