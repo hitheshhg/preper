@@ -13,6 +13,8 @@ const envSchema = z.object({
   // AI Configuration (Server-side ONLY)
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_MODEL: z.string().default('gpt-4o'),
+  GEMINI_API_KEY: z.string().optional(),
+  GEMINI_MODEL: z.string().default('gemini-3.6-flash'),
 
   // File Storage (UploadThing or local storage)
   UPLOADTHING_TOKEN: z.string().optional(),
@@ -32,6 +34,8 @@ function validateEnv(): Env {
     AUTH_SECRET: process.env.AUTH_SECRET,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     OPENAI_MODEL: process.env.OPENAI_MODEL,
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+    GEMINI_MODEL: process.env.GEMINI_MODEL,
     UPLOADTHING_TOKEN: process.env.UPLOADTHING_TOKEN,
     NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
@@ -50,3 +54,5 @@ export const env = validateEnv();
 export const isProduction = env.NODE_ENV === 'production';
 export const isDatabaseConfigured = Boolean(env.DATABASE_URL);
 export const isOpenAIConfigured = Boolean(env.OPENAI_API_KEY);
+export const isGeminiConfigured = Boolean(env.GEMINI_API_KEY);
+

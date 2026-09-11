@@ -46,13 +46,19 @@ class AIService:
     def _call_gemini_raw(self, prompt: str, system_instruction: str = "") -> Optional[str]:
         """
         Sends a request to the Google Gemini generateContent REST endpoint.
-        Returns the text response or None on failure/missing key.
+        Uses gemini-3.6-flash / gemini-flash-latest with header and query auth.
         """
-        if not self.api_key or self.api_key.strip() == "" or "your_gemini_api_key" in self.api_key:
+        api_key = self.api_key or settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY", "")
+        if not api_key or api_key.strip() == "" or "your_gemini_api_key" in api_key:
             return None
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent?key={self.api_key}"
-        headers = {"Content-Type": "application/json"}
+        models_to_try = [self.model, "gemini-3.6-flash", "gemini-flash-latest"]
+        models_to_try = [m for m in dict.fromkeys(models_to_try) if m and m != "gemini-2.5-flash"]
+
+        headers = {
+            "Content-Type": "application/json",
+            "X-goog-api-key": api_key
+        }
         
         contents = []
         if system_instruction:
@@ -73,27 +79,37 @@ class AIService:
         payload = {
             "contents": contents,
             "generationConfig": {
-                "temperature": 0.3,
-                "maxOutputTokens": 2048,
+                "temperature": 0.2,
+                "maxOutputTokens": 4096,
                 "responseMimeType": "application/json"
             }
         }
 
-        try:
-            resp = requests.post(url, headers=headers, json=payload, timeout=25)
-            if resp.status_code == 200:
-                data = resp.json()
-                candidates = data.get("candidates", [])
-                if candidates:
-                    parts = candidates[0].get("content", {}).get("parts", [])
-                    if parts:
-                        return parts[0].get("text", "")
-            else:
-                logger.warning(f"Gemini API returned status {resp.status_code}: {resp.text}")
-                return None
-        except Exception as e:
-            logger.error(f"Failed to communicate with Gemini API: {e}")
-            return None
+        for model in models_to_try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+            try:
+                resp = requests.post(url, headers=headers, json=payload, timeout=28)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    candidates = data.get("candidates", [])
+                    if candidates:
+                        parts = candidates[0].get("content", {}).get("parts", [])
+                        text_parts = [p.get("text", "") for p in parts if "text" in p]
+                        if text_parts:
+                            result_text = "\n".join(text_parts).strip()
+                            # Strip markdown backticks if returned
+                            if result_text.startswith("```json"):
+                                result_text = result_text[7:]
+                            if result_text.startswith("```"):
+                                result_text = result_text[3:]
+                            if result_text.endswith("```"):
+                                result_text = result_text[:-3]
+                            return result_text.strip()
+                else:
+                    logger.warning(f"Gemini API ({model}) returned status {resp.status_code}: {resp.text[:180]}")
+            except Exception as e:
+                logger.error(f"Failed to communicate with Gemini API ({model}): {e}")
+                continue
 
         return None
 
