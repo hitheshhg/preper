@@ -21,6 +21,8 @@ dist/
 .env.production.local
 *.env
 *.env.*
+.prepr-dev-db.json
+*.db
 
 # Logs
 npm-debug.log*
