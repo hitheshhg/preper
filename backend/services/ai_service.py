@@ -1,3 +1,4 @@
+import re
 import json
 import logging
 import requests
@@ -1135,11 +1136,121 @@ class AIService:
             except Exception as e:
                 logger.warning(f"Coach chat parse error: {e}")
 
-        # Smart Fallback Response
+        # Intelligent Domain Fallback Response Engine
+        msg_lower = message.lower()
+        full_name = user_profile.get('full_name', 'Aditya')
+        readiness = user_profile.get('readiness_score', 76)
+        role = user_profile.get('target_role', 'Software Development Engineer')
+
+        # 1. Resume Bullet / Google XYZ Formula
+        if any(w in msg_lower for w in ["resume", "bullet", "google", "rewrite", "xyz"]):
+            return CoachChatResponse(
+                reply=(
+                    f"To impress tier-1 engineering juries and technical recruiters, structure every single project bullet using Google's XYZ Formula:\n\n"
+                    f"📌 **Formula:** 'Accomplished [X], as measured by [Y], by implementing [Z].'\n\n"
+                    f"❌ **Weak / Generic:** 'Built full stack e-commerce backend with Python and PostgreSQL.'\n\n"
+                    f"✅ **Google Caliber:** 'Architected asynchronous FastAPI ordering pipeline handling 1,200 requests/sec with under 45ms latency (X), reducing checkout drop-off by 28% (Y), by implementing Redis caching and connection pooling in PostgreSQL (Z).'\n\n"
+                    f"Run your resume through our Audit Engine in the Resume Studio to detect unquantified bullets automatically!"
+                ),
+                coach_state="explaining",
+                suggested_actions=[
+                    {"label": "Audit Bullets in Resume Studio", "link": "/resume"},
+                    {"label": "Review SDE Rubric", "link": "/questions?category=System+Design"}
+                ]
+            )
+
+        # 2. Communication Score / Cadence
+        elif any(w in msg_lower for w in ["communication", "68%", "score", "filler", "cadence", "articulation"]):
+            return CoachChatResponse(
+                reply=(
+                    f"Your Communication rubric reflects 3 critical speech factors measured during interviews:\n\n"
+                    f"1. **Structural Scaffolding (STAR Method):** State Situation, Task, Action, and Result explicitly. Unstructured ramble is the #1 cause of score deductions.\n"
+                    f"2. **Pacing & Cadence:** Aim for a measured 130–150 words per minute. Speaking too quickly signals anxiety, while speaking under 100 wpm dilutes executive engagement.\n"
+                    f"3. **Filler Word Density:** Pausing in silence for 2 seconds is perceived by interviewers as thoughtful; substituting 'uhm', 'like', or 'basically' degrades technical authority.\n\n"
+                    f"Launch a targeted technical session to calibrate your live speech cadence!"
+                ),
+                coach_state="thinking",
+                suggested_actions=[
+                    {"label": "Practice Technical Simulation", "link": "/interview?mode=Technical"},
+                    {"label": "Analyze Speech Telemetry", "link": "/analytics"}
+                ]
+            )
+
+        # 3. Aggressive HR / Salary Question Simulation
+        elif any(w in msg_lower for w in ["salary", "hr", "aggressive", "negotiat", "compensation"]):
+            return CoachChatResponse(
+                reply=(
+                    f"Let's roleplay an aggressive compensation challenge for an entry-level {role} position:\n\n"
+                    f"👔 **Interviewer:** 'Our company policy sets fresher packages at a fixed ₹8.5 LPA base. You don't have prior full-time corporate tenure. Why should our compensation committee grant you higher equity or joining bonus?'\n\n"
+                    f"💡 **Tactical Formula to Answer:**\n"
+                    f"1. **Anchor on Impact:** 'I fully appreciate the standard organizational band. However, my evaluation is based on immediate time-to-productivity.'\n"
+                    f"2. **Cite Evidence:** 'In my prior projects and internships, I delivered production microservices with 99.9% uptime and reduced build pipelines by 40%.'\n"
+                    f"3. **Collaborative Close:** 'If base compensation is structured, could we evaluate performance milestone reviews at 6 months or sign-on equity incentives?'"
+                ),
+                coach_state="explaining",
+                suggested_actions=[
+                    {"label": "Practice HR Behavioral Mock", "link": "/interview?mode=HR"},
+                    {"label": "Review Company Salary Bands", "link": "/companies"}
+                ]
+            )
+
+        # 4. Group Discussion / GD Mistakes
+        elif any(w in msg_lower for w in ["group discussion", "gd", "mistake", "roundtable", "boardroom", "debate"]):
+            return CoachChatResponse(
+                reply=(
+                    f"In placement group discussions, the jury evaluates diplomatic leadership, not sheer speaking time. Here are the Top 3 fatal GD mistakes:\n\n"
+                    f"1. **Monopolizing the Discussion:** Speaking for 3 uninterrupted minutes signals low emotional quotient. The optimal intervention duration is 35–45 seconds with high substance.\n"
+                    f"2. **Emotional Disagreement without Trade-offs:** Avoid saying 'I disagree with you'. Instead use: 'While candidate 3 makes a compelling point regarding development speed, the empirical trade-off in security latency suggests...'\n"
+                    f"3. **Ignoring Marginalized Voices:** A candidate who notices a quiet peer and says 'I would love to hear Candidate 4's perspective on cloud costs before we conclude' almost always earns top leadership marks from evaluators.\n\n"
+                    f"Step into our simulated Boardroom Chamber to practice diplomatic interjections!"
+                ),
+                coach_state="explaining",
+                suggested_actions=[
+                    {"label": "Enter Boardroom Chamber", "link": "/gd"},
+                    {"label": "Review GD Scorecard", "link": "/analytics"}
+                ]
+            )
+
+        # 5. Daily Priority / Focus Area
+        elif any(w in msg_lower for w in ["priority", "focus", "today", "readiness", "start"]):
+            return CoachChatResponse(
+                reply=(
+                    f"Greetings {full_name}! With your readiness currently at **{readiness}/100**, here is your precision training plan for today:\n\n"
+                    f"🎯 **P0 Priority (High Impact):** Complete 1 Technical Mock Interview focusing on Core CS Fundamentals (DBMS indexing & OS threading). This directly targets your highest weightage placement criteria.\n"
+                    f"🎯 **P1 Priority (ATS Polish):** Ensure your primary resume has at least 3 quantified metrics in your project section.\n"
+                    f"🎯 **P2 Priority (Confidence Boost):** Conduct a 5-minute boardroom simulation in the GD module to refine interjection timing.\n\n"
+                    f"Which one would you like to knock out first?"
+                ),
+                coach_state="encouraging",
+                suggested_actions=[
+                    {"label": "Launch Technical Mock", "link": "/interview?mode=Technical"},
+                    {"label": "Audit Resume", "link": "/resume"},
+                    {"label": "Chamber Simulation", "link": "/gd"}
+                ]
+            )
+
+        # 6. Technical / DSA / System Design
+        elif any(w in msg_lower for w in ["dsa", "algorithm", "system design", "dbms", "os", "coding", "technical"]):
+            return CoachChatResponse(
+                reply=(
+                    f"For top-tier product engineering placement rounds (Google, Microsoft, Amazon), technical interviews evaluate:\n\n"
+                    f"1. **Algorithmic Complexity:** Always vocalize Time/Space complexity *before* writing code. Discuss trade-offs (e.g. O(N) auxiliary memory vs O(N log N) in-place sorting).\n"
+                    f"2. **Edge Cases:** Clarify constraints immediately (empty input, null pointers, integer overflow, duplicates).\n"
+                    f"3. **Database Architecture:** Be prepared to explain B+ Tree indexing vs Hash indexing, WAL logging, and ACID vs BASE paradigms.\n\n"
+                    f"Explore our curated company-specific questions in the Question Bank!"
+                ),
+                coach_state="thinking",
+                suggested_actions=[
+                    {"label": "Browse Questions Bank", "link": "/questions"},
+                    {"label": "Company Placement Tracks", "link": "/companies"}
+                ]
+            )
+
+        # Default fallback
         reply = (
-            f"Hey {user_profile.get('full_name', 'there')}! I've been monitoring your preparation journey. "
-            f"Your placement readiness is currently at {user_profile.get('readiness_score', 65)}/100. "
-            "To make the biggest jump this week, I recommend knocking out today's HR mock interview quest and tuning your resume project bullets with quantifiable numbers. You've got this!"
+            f"Hey {full_name}! I've been monitoring your preparation journey. "
+            f"Your placement readiness is currently at {readiness}/100 for {role}. "
+            "To make the biggest score jump this week, I recommend completing today's technical mock interview quest and tuning your resume project bullets with quantifiable metrics. You've got this!"
         )
         return CoachChatResponse(
             reply=reply,

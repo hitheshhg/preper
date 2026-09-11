@@ -12,6 +12,7 @@ import {
 } from '@/types';
 import { api } from '@/lib/api';
 import { triggerConfetti } from '@/lib/confetti';
+import { saveResumeAnalysisAction } from '@/app/actions/resume';
 import {
   Upload,
   CheckCircle2,
@@ -141,6 +142,22 @@ Software Engineering Intern — TechNova Solutions (June 2025 - August 2025)
         setHistory(result.score_history);
       }
       triggerConfetti();
+
+      // Persist resume and analysis to PostgreSQL
+      saveResumeAnalysisAction({
+        fileName: result.file_name || 'candidate_resume.txt',
+        rawText: rawText || defaultSampleResume,
+        targetRole,
+        overallScore: result.overall_score || 78,
+        atsScore: result.detailed_scores?.ats_compatibility?.score || 84,
+        clarityScore: result.detailed_scores?.formatting?.score || 85,
+        structureScore: result.ats_diagnostics?.heading_clarity_score || 85,
+        relevanceScore: result.job_match?.match_percentage || 80,
+        skillsDetected: result.skill_taxonomy || [],
+        missingSkills: result.job_match?.missing_skills || [],
+        experienceAnalysis: result.experience_entries || {},
+        recommendations: result.health_summary?.highest_impact_improvements || [],
+      }).catch(e => console.warn('Error persisting resume to PostgreSQL:', e));
     } catch (err: any) {
       setAnalysisError(err.message || 'Failed to complete resume audit. Please check the file and try again.');
     } finally {

@@ -35,6 +35,7 @@ import {
 } from '@/types';
 import { api } from '@/lib/api';
 import { triggerConfetti } from '@/lib/confetti';
+import { saveCompletedInterviewAction } from '@/app/actions/interview';
 
 function InterviewSessionContent() {
   const router = useRouter();
@@ -293,6 +294,35 @@ function InterviewSessionContent() {
           const evalReport = await api.getInterviewEvaluation(interviewId || 'interview-demo-1');
           setEvaluation(evalReport);
           triggerConfetti();
+
+          if (evalReport) {
+            saveCompletedInterviewAction({
+              interviewId: evalReport.interview_id,
+              role,
+              mode,
+              difficulty,
+              overallScore: evalReport.overall_score || 80,
+              technicalScore: evalReport.technical_score || 80,
+              communicationScore: evalReport.communication_score || 80,
+              structureScore: evalReport.structure_score || 80,
+              problemSolvingScore: evalReport.problem_solving_score || 80,
+              confidenceScore: evalReport.confidence_score || 80,
+              integrityScore: evalReport.integrity_score ?? 100,
+              strengths: evalReport.strengths || [],
+              weaknesses: evalReport.weaknesses || [],
+              recommendations: evalReport.actionable_recommendations || [],
+              questionsWithAnswers: (evalReport.question_reviews || []).map((q: any) => ({
+                order: q.question_order,
+                question: q.question_text,
+                category: q.category,
+                userAnswer: q.user_answer,
+                score: q.score,
+                feedback: q.ideal_answer_structure,
+                strengths: q.strengths,
+                weaknesses: q.weaknesses,
+              })),
+            }).catch(e => console.warn('Error saving interview to PostgreSQL:', e));
+          }
         } else {
           setStep(res.step);
           setCurrentQuestion(res.next_question);
@@ -309,6 +339,35 @@ function InterviewSessionContent() {
         const evalReport = await api.getInterviewEvaluation(interviewId || 'interview-demo-1');
         setEvaluation(evalReport);
         triggerConfetti();
+
+        if (evalReport) {
+          saveCompletedInterviewAction({
+            interviewId: evalReport.interview_id,
+            role,
+            mode,
+            difficulty,
+            overallScore: evalReport.overall_score || 80,
+            technicalScore: evalReport.technical_score || 80,
+            communicationScore: evalReport.communication_score || 80,
+            structureScore: evalReport.structure_score || 80,
+            problemSolvingScore: evalReport.problem_solving_score || 80,
+            confidenceScore: evalReport.confidence_score || 80,
+            integrityScore: evalReport.integrity_score ?? 100,
+            strengths: evalReport.strengths || [],
+            weaknesses: evalReport.weaknesses || [],
+            recommendations: evalReport.actionable_recommendations || [],
+            questionsWithAnswers: (evalReport.question_reviews || []).map((q: any) => ({
+              order: q.question_order,
+              question: q.question_text,
+              category: q.category,
+              userAnswer: q.user_answer,
+              score: q.score,
+              feedback: q.ideal_answer_structure,
+              strengths: q.strengths,
+              weaknesses: q.weaknesses,
+            })),
+          }).catch(e => console.warn('Error saving interview fallback:', e));
+        }
       } finally {
         setIsSubmitting(false);
       }

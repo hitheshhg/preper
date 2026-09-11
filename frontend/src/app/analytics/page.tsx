@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Navbar } from '@/components/common/Navbar';
 import { Badge } from '@/components/ui/Badge';
 import { SectionLabel } from '@/components/ui/SectionLabel';
+import { getAnalyticsDataAction, AnalyticsTelemetry } from '@/app/actions/analytics';
 import {
   TrendingUp,
   ArrowRight,
@@ -28,6 +29,16 @@ import {
 } from 'recharts';
 
 export default function AnalyticsPage() {
+  const [telemetry, setTelemetry] = useState<AnalyticsTelemetry | null>(null);
+
+  useEffect(() => {
+    getAnalyticsDataAction()
+      .then(res => {
+        if (res) setTelemetry(res);
+      })
+      .catch(err => console.warn('Telemetry load error:', err));
+  }, []);
+
   const readinessHistory = [
     { week: 'W1', score: 58 },
     { week: 'W2', score: 62 },
@@ -61,6 +72,14 @@ export default function AnalyticsPage() {
     { name: 'Behavioral & Leadership (STAR)', score: 78, benchmark: 75, delta: '+12%', status: 'Benchmark Met', link: '/interview?mode=STAR' },
     { name: 'Resume ATS Compatibility', score: 74, benchmark: 80, delta: '+6%', status: 'Progressing', link: '/resume' }
   ];
+
+  const activeHistory = telemetry?.readinessHistory ?? readinessHistory;
+  const activeRadar = telemetry?.categoryRadarData ?? categoryRadarData;
+  const activeDimensions = telemetry?.dimensions ?? dimensions;
+  const activeReadiness = telemetry?.readinessScore ?? 72;
+  const activeOfferProb = telemetry?.offerProbability ?? 78;
+  const activeSessions = telemetry?.sessionsCompleted ?? 18;
+  const activeXP = telemetry?.weeklyXP ?? 490;
 
   const actionableInsights = [
     {
@@ -99,7 +118,12 @@ export default function AnalyticsPage() {
               </p>
             </div>
 
-            <Badge variant="mint">Top 15% Cohort Velocity</Badge>
+            <div className="flex items-center gap-3">
+              {telemetry?.hasRealData && (
+                <Badge variant="mint">Live PostgreSQL Telemetry</Badge>
+              )}
+              <Badge variant="lavender">Top 15% Cohort Velocity</Badge>
+            </div>
           </div>
 
           {/* KPI Strip */}
@@ -109,7 +133,7 @@ export default function AnalyticsPage() {
                 Readiness Score
               </span>
               <div className="font-serif text-4xl sm:text-5xl font-normal text-foreground">
-                72<span className="text-xs font-sans text-foreground-muted">/100</span>
+                {activeReadiness}<span className="text-xs font-sans text-foreground-muted">/100</span>
               </div>
               <span className="text-[11px] text-foreground-secondary font-sans flex items-center gap-1 pt-1">
                 <TrendingUp className="w-3 h-3 text-mint" /> +14 pts this month
@@ -121,10 +145,10 @@ export default function AnalyticsPage() {
                 Offer Probability
               </span>
               <div className="font-serif text-4xl sm:text-5xl font-normal text-foreground">
-                78%
+                {activeOfferProb}%
               </div>
               <span className="text-[11px] text-foreground-secondary block pt-1">
-                Tier-2 / Tier-1 Contender
+                {activeOfferProb >= 85 ? 'Tier-1 Benchmark Met' : 'Tier-2 / Tier-1 Contender'}
               </span>
             </div>
 
@@ -133,10 +157,10 @@ export default function AnalyticsPage() {
                 Sessions Completed
               </span>
               <div className="font-serif text-4xl sm:text-5xl font-normal text-foreground">
-                18
+                {activeSessions}
               </div>
               <span className="text-[11px] text-foreground-secondary block pt-1">
-                12 Tech · 4 HR · 2 GD
+                {telemetry?.techSessionsCount ?? 12} Tech · {telemetry?.hrSessionsCount ?? 4} HR · {telemetry?.gdSessionsCount ?? 2} GD
               </span>
             </div>
 
@@ -145,11 +169,11 @@ export default function AnalyticsPage() {
                 Weekly XP Volume
               </span>
               <div className="font-serif text-4xl sm:text-5xl font-normal text-foreground flex items-center gap-1.5">
-                <span>490</span>
+                <span>{activeXP}</span>
                 <span className="text-xs font-sans text-foreground-muted">XP</span>
               </div>
               <span className="text-[11px] text-foreground-secondary block pt-1">
-                5 consecutive active days
+                Active telemetry streak
               </span>
             </div>
           </div>
@@ -196,7 +220,7 @@ export default function AnalyticsPage() {
 
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={readinessHistory} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <LineChart data={activeHistory} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" opacity={0.4} />
                     <XAxis dataKey="week" stroke="var(--chart-label)" fontSize={11} tickLine={false} />
                     <YAxis domain={[50, 100]} stroke="var(--chart-label)" fontSize={11} tickLine={false} />
@@ -231,7 +255,7 @@ export default function AnalyticsPage() {
 
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart data={categoryRadarData} margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
+                  <RadarChart data={activeRadar} margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
                     <PolarGrid stroke="var(--chart-grid)" opacity={0.5} />
                     <PolarAngleAxis dataKey="category" stroke="var(--chart-label)" fontSize={10} />
                     <PolarRadiusAxis angle={30} domain={[0, 100]} opacity={0.3} tick={false} />
@@ -299,7 +323,7 @@ export default function AnalyticsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {dimensions.map(d => (
+                  {activeDimensions.map(d => (
                     <tr key={d.name} className="hover:bg-surface-muted transition-colors">
                       <td className="py-4 font-medium text-foreground">
                         {d.name}

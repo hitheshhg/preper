@@ -12,6 +12,7 @@ import { GDSession, GDEvaluation } from '@/types';
 import { api } from '@/lib/api';
 import { triggerConfetti } from '@/lib/confetti';
 import { Clock, Send, Users } from 'lucide-react';
+import { saveCompletedGDAction } from '@/app/actions/gd';
 
 export default function GDSimulatorPage() {
   const [session, setSession] = useState<GDSession | null>(null);
@@ -72,6 +73,13 @@ export default function GDSimulatorPage() {
       const report = await api.completeGDSession(session.session_id);
       setEvaluation(report);
       triggerConfetti();
+
+      // Persist Group Discussion session and rubric evaluation into PostgreSQL
+      saveCompletedGDAction({
+        topic: session.topic || topic,
+        transcript: session.messages || [],
+        evaluation: report,
+      }).catch(err => console.warn('Error persisting GD to PostgreSQL:', err));
     } catch (err) {
       console.warn('Complete GD error:', err);
     }

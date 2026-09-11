@@ -217,9 +217,9 @@ export default function DashboardPage() {
   const metrics = dashboardData?.metrics;
   const recentInterviews = dashboardData?.recentInterviews || [];
   const latestResume = dashboardData?.latestResume;
-  const totalInterviews = metrics?.totalInterviews ?? 0;
-  const averageScore = metrics?.averageScore;
-  const currentStreak = metrics?.currentStreak ?? 0;
+  const totalInterviews = metrics?.interviewsCompleted ?? metrics?.totalInterviews ?? 0;
+  const averageScore = metrics?.averageScore ?? metrics?.readinessScore ?? null;
+  const currentStreak = metrics?.activeStreak ?? metrics?.currentStreak ?? 0;
   const resumeAtsScore = latestResume?.atsScore ?? null;
 
   return (
