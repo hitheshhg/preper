@@ -1,0 +1,18 @@
+{
+  "name": "prepquest",
+  "version": "1.0.0",
+  "description": "PrepQuest: Train smarter. Interview better. Get placed. Major-project AI placement preparation platform.",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "python3 -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload",
+    "build": "cd frontend && npm run build",
+    "test:backend": "python3 -c \"import backend.main; print('Backend syntax ok')\"",
+    "lint": "cd frontend && npm run lint"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "author": "PrepQuest Team",
+  "license": "MIT"
+}

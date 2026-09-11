@@ -1,0 +1,284 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --background: #F7F6F2;
+    --surface: #FCFBF8;
+    --surface-elevated: #FFFFFF;
+    --surface-muted: #EFEEE9;
+
+    --foreground: #111111;
+    --foreground-secondary: #5F5F5A;
+    --foreground-muted: #92918B;
+
+    --border: #D8D6D0;
+    --border-strong: #BDBBB4;
+
+    --primary: #151515;
+    --primary-foreground: #FFFFFF;
+
+    /* Accents */
+    --lavender: #B8A6D9;
+    --lavender-soft: #D8CDE8;
+    --lavender-text: #4D3875;
+    --pink: #D9AEB1;
+    --pink-soft: #E8C9C7;
+    --pink-text: #733B3F;
+    --blue: #A9BBD0;
+    --blue-soft: #D5DFE9;
+    --blue-text: #284466;
+    --mint: #C7D8D0;
+    --mint-soft: #E0EAE5;
+    --mint-text: #2B5442;
+
+    /* Charts */
+    --chart-primary: #111111;
+    --chart-secondary: #B8A6D9;
+    --chart-grid: #D8D6D0;
+    --chart-label: #5F5F5A;
+
+    /* Modals & Overlays */
+    --overlay: rgba(17, 17, 17, 0.25);
+    --modal: #FCFBF8;
+
+    /* Abstract Artwork */
+    --visual-bg-start: #D8CDE8;
+    --visual-bg-mid: #E8C9C7;
+    --visual-bg-end: #C7D8D0;
+    --visual-orb-core: rgba(252, 251, 248, 0.95);
+    --visual-orb-glow1: rgba(184, 166, 217, 0.40);
+    --visual-orb-glow2: rgba(232, 201, 199, 0.40);
+    --visual-ribbon: #FCFBF8;
+  }
+
+  .dark {
+    --background: #111110;
+    --surface: #181817;
+    --surface-elevated: #20201E;
+    --surface-muted: #272724;
+
+    --foreground: #F2F0E9;
+    --foreground-secondary: #B7B5AE;
+    --foreground-muted: #85847E;
+
+    --border: #34332F;
+    --border-strong: #4A4944;
+
+    --primary: #F2F0E9;
+    --primary-foreground: #111110;
+
+    /* Accents in dark mode */
+    --lavender: #BDA9DD;
+    --lavender-soft: #76668E;
+    --lavender-text: #BDA9DD;
+    --pink: #D7A8AD;
+    --pink-soft: #76595D;
+    --pink-text: #D7A8AD;
+    --blue: #AABED6;
+    --blue-soft: #596678;
+    --blue-text: #AABED6;
+    --mint: #B9D1C7;
+    --mint-soft: #536A61;
+    --mint-text: #B9D1C7;
+
+    /* Charts */
+    --chart-primary: #F2F0E9;
+    --chart-secondary: #BDA9DD;
+    --chart-grid: #34332F;
+    --chart-label: #B7B5AE;
+
+    /* Modals & Overlays */
+    --overlay: rgba(0, 0, 0, 0.60);
+    --modal: #20201E;
+
+    /* Abstract Artwork */
+    --visual-bg-start: #76668E;
+    --visual-bg-mid: #76595D;
+    --visual-bg-end: #536A61;
+    --visual-orb-core: rgba(24, 24, 23, 0.95);
+    --visual-orb-glow1: rgba(189, 169, 221, 0.25);
+    --visual-orb-glow2: rgba(215, 168, 173, 0.22);
+    --visual-ribbon: #F2F0E9;
+  }
+}
+
+@theme {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-muted: var(--surface-muted);
+
+  --color-foreground: var(--foreground);
+  --color-foreground-secondary: var(--foreground-secondary);
+  --color-foreground-muted: var(--foreground-muted);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-lavender: var(--lavender);
+  --color-lavender-soft: var(--lavender-soft);
+  --color-lavender-text: var(--lavender-text);
+  --color-pink: var(--pink);
+  --color-pink-soft: var(--pink-soft);
+  --color-pink-text: var(--pink-text);
+  --color-blue: var(--blue);
+  --color-blue-soft: var(--blue-soft);
+  --color-blue-text: var(--blue-text);
+  --color-mint: var(--mint);
+  --color-mint-soft: var(--mint-soft);
+  --color-mint-text: var(--mint-text);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  transition: background-color 300ms ease, color 300ms ease;
+}
+
+/* Subtle theme transition without affecting layout geometry */
+main, nav, header, footer, aside, .theme-transition {
+  transition: background-color 300ms ease, color 300ms ease, border-color 300ms ease;
+}
+
+.font-serif {
+  font-family: var(--font-serif), "Playfair Display", Georgia, serif;
+}
+
+.font-sans {
+  font-family: var(--font-sans), "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Primary Button with purposeful Day/Night inversion */
+.btn-pill-primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border-radius: 9999px;
+  padding: 0.75rem 1.75rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+  transition: background-color 200ms ease, color 200ms ease, transform 150ms ease, opacity 150ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.btn-pill-primary:hover {
+  opacity: 0.90;
+  transform: translateY(-1px);
+}
+
+.btn-pill-primary:active {
+  transform: translateY(0px);
+}
+
+/* Secondary Button with subtle border and fill hover */
+.btn-pill-secondary {
+  background-color: transparent;
+  color: var(--foreground);
+  border: 1px solid var(--border-strong);
+  border-radius: 9999px;
+  padding: 0.75rem 1.75rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease, transform 150ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.btn-pill-secondary:hover {
+  border-color: var(--foreground);
+  background-color: var(--surface-muted);
+  transform: translateY(-1px);
+}
+
+.btn-pill-secondary:active {
+  transform: translateY(0px);
+}
+
+/* Hairline Dividers */
+.hairline-b {
+  border-bottom: 1px solid var(--border);
+}
+
+.hairline-t {
+  border-top: 1px solid var(--border);
+}
+
+.hairline-l {
+  border-left: 1px solid var(--border);
+}
+
+.hairline-r {
+  border-right: 1px solid var(--border);
+}
+
+/* Editorial Eyebrow Tag */
+.eyebrow {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  color: var(--foreground-secondary);
+}
+
+/* Organic Motion */
+@keyframes breathe {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.03) rotate(1.5deg);
+    opacity: 1;
+  }
+}
+
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(-1deg);
+  }
+}
+
+@keyframes pulseSubtle {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.02);
+  }
+}
+
+.animate-breathe {
+  animation: breathe 14s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: floatSlow 8s ease-in-out infinite;
+}
+
+.animate-pulse-subtle {
+  animation: pulseSubtle 6s ease-in-out infinite;
+}

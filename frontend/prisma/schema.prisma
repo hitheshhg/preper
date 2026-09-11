@@ -1,0 +1,212 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+  RECRUITER
+  INTERVIEWER
+}
+
+enum InterviewStatus {
+  DRAFT
+  PREPARING
+  READY
+  IN_PROGRESS
+  SUBMITTING
+  COMPLETED
+  FAILED
+  EXPIRED
+  CANCELLED
+}
+
+model User {
+  id               String            @id @default(cuid())
+  email            String            @unique
+  passwordHash     String?
+  name             String?
+  image            String?
+  role             Role              @default(USER)
+  profile          Profile?
+  resumes          Resume[]
+  interviews       Interview[]
+  groupDiscussions GroupDiscussion[]
+  auditLogs        AuditLog[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([email])
+  @@index([role])
+}
+
+model Profile {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName            String?
+  college             String?
+  degree              String?  @default("B.Tech / B.E.")
+  branch              String?  @default("Computer Science")
+  graduationYear      Int?     @default(2026)
+  targetRole          String   @default("Software Development Engineer")
+  targetCompanies     String[] @default(["Google", "Microsoft", "Amazon"])
+  experienceLevel     String   @default("Fresher")
+  strongestSkills     String[] @default([])
+  weakestSkills       String[] @default([])
+  dailyGoalMinutes    Int      @default(20)
+  confidenceLevel     Int      @default(60)
+  completionPercent   Int      @default(0)
+  onboardingCompleted Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Resume {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileName  String
+  fileUrl   String?
+  fileSize  Int?
+  rawText   String           @db.Text
+  isPrimary Boolean          @default(true)
+  analyses  ResumeAnalysis[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([userId])
+}
+
+model ResumeAnalysis {
+  id                 String   @id @default(cuid())
+  resumeId           String
+  resume             Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  userId             String
+  targetRole         String?
+  overallScore       Int      @default(0)
+  atsScore           Int      @default(0)
+  clarityScore       Int      @default(0)
+  structureScore     Int      @default(0)
+  relevanceScore     Int      @default(0)
+  skillsDetected     Json     @default("[]")
+  missingSkills      Json     @default("[]")
+  experienceAnalysis Json     @default("{}")
+  recommendations    Json     @default("[]")
+  improvedBullets    Json     @default("[]")
+  createdAt          DateTime @default(now())
+
+  @@index([userId])
+  @@index([resumeId])
+}
+
+model Interview {
+  id                  String              @id @default(cuid())
+  userId              String
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mode                String              @default("Technical")
+  role                String              @default("Software Development Engineer")
+  difficulty          String              @default("Medium")
+  status              InterviewStatus     @default(READY)
+  durationSeconds     Int                 @default(0)
+  overallScore        Int?
+  technicalScore      Int?
+  communicationScore  Int?
+  structureScore      Int?
+  problemSolvingScore Int?
+  confidenceScore     Int?
+  integrityScore      Int?                @default(100)
+  strengths           String[]            @default([])
+  weaknesses          String[]            @default([])
+  recommendations     String[]            @default([])
+  questions           InterviewQuestion[]
+  createdAt           DateTime            @default(now())
+  completedAt         DateTime?
+
+  @@index([userId])
+  @@index([status])
+}
+
+model InterviewQuestion {
+  id               String            @id @default(cuid())
+  interviewId      String
+  interview        Interview         @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  questionOrder    Int
+  questionText     String            @db.Text
+  category         String
+  difficulty       String
+  expectedConcepts String[]          @default([])
+  answers          InterviewAnswer[]
+  createdAt        DateTime          @default(now())
+
+  @@index([interviewId])
+}
+
+model InterviewAnswer {
+  id               String            @id @default(cuid())
+  questionId       String
+  question         InterviewQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  userId           String
+  userAnswer       String            @db.Text
+  score            Int?
+  feedback         String?           @db.Text
+  idealAnswer      String?           @db.Text
+  audioDurationSec Float?
+  createdAt        DateTime          @default(now())
+
+  @@index([questionId])
+  @@index([userId])
+}
+
+model GroupDiscussion {
+  id          String         @id @default(cuid())
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic       String
+  transcript  Json           @default("[]")
+  evaluations GDEvaluation[]
+  createdAt   DateTime       @default(now())
+
+  @@index([userId])
+}
+
+model GDEvaluation {
+  id                   String          @id @default(cuid())
+  gdId                 String
+  gd                   GroupDiscussion @relation(fields: [gdId], references: [id], onDelete: Cascade)
+  overallScore         Int             @default(0)
+  contentScore         Int             @default(0)
+  leadershipScore      Int             @default(0)
+  communicationScore   Int             @default(0)
+  activeListeningScore Int             @default(0)
+  strengths            String[]        @default([])
+  weaknesses           String[]        @default([])
+  summary              String?         @db.Text
+  createdAt            DateTime        @default(now())
+
+  @@index([gdId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action     String
+  resource   String
+  resourceId String?
+  ipAddress  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId])
+  @@index([resource])
+  @@index([createdAt])
+}
