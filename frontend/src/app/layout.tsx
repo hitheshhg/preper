@@ -18,7 +18,7 @@ const sansFont = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "PREPER — The Intelligent Interview Studio",
+  title: "Prepr — AI Placement Preparation Studio",
   description: "An editorial AI interview preparation platform. Adaptive technical & behavioral voice interviews, enterprise ATS resume intelligence, and boardroom group discussions.",
   keywords: ["interview intelligence", "adaptive mock interviews", "editorial AI studio", "ATS resume audit", "boardroom discussion simulator"],
 };
