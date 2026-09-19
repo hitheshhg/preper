@@ -12,10 +12,22 @@ import {
 } from 'lucide-react';
 import { CoachAvatar } from '@/components/coach/CoachAvatar';
 
+export interface CompanyBlueprint {
+  id: string;
+  name: string;
+  logo: string;
+  tier: string;
+  rounds: string[];
+  primary_skills: string[];
+  interview_style: string;
+  difficulty: string;
+  recommended_mock: string;
+}
+
 export default function CompaniesPage() {
-  const [companies, setCompanies] = useState<any[]>([]);
-  const [selectedCompany, setSelectedCompany] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [companies, setCompanies] = useState<CompanyBlueprint[]>([]);
+  const [selectedCompany, setSelectedCompany] = useState<CompanyBlueprint | null>(null);
+  const [, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
@@ -179,7 +191,7 @@ export default function CompaniesPage() {
                 <div className="p-5 rounded-2xl bg-surface border border-border flex items-start gap-3">
                   <CoachAvatar mood="explaining" size="sm" animate={false} />
                   <p className="text-xs text-foreground-secondary font-normal leading-relaxed">
-                    "When interviewing with {selectedCompany.name}, articulate trade-offs between memory and CPU latency before committing to a final algorithm."
+                    &ldquo;When interviewing with {selectedCompany.name}, articulate trade-offs between memory and CPU latency before committing to a final algorithm.&rdquo;
                   </p>
                 </div>
               </div>

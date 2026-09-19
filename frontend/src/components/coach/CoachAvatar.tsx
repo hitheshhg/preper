@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Sparkles, Brain, Compass, AlertCircle, CheckCircle2, Bot, Zap, Activity } from 'lucide-react';
+import { Sparkles, Brain, Compass, AlertCircle, Zap } from 'lucide-react';
 
 export type CoachMood = 'happy' | 'excited' | 'encouraging' | 'thinking' | 'concerned' | 'celebrating' | 'explaining';
 

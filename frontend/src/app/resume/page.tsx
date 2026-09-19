@@ -13,9 +13,9 @@ import {
 import { api } from '@/lib/api';
 import { triggerConfetti } from '@/lib/confetti';
 import { saveResumeAnalysisAction } from '@/app/actions/resume';
+import { CoachMood } from '@/components/coach/CoachAvatar';
 import {
   Upload,
-  CheckCircle2,
   AlertCircle,
   Sparkles,
   Copy,
@@ -158,8 +158,9 @@ Software Engineering Intern — TechNova Solutions (June 2025 - August 2025)
         experienceAnalysis: result.experience_entries || {},
         recommendations: result.health_summary?.highest_impact_improvements || [],
       }).catch(e => console.warn('Error persisting resume to PostgreSQL:', e));
-    } catch (err: any) {
-      setAnalysisError(err.message || 'Failed to complete resume audit. Please check the file and try again.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to complete resume audit. Please check the file and try again.';
+      setAnalysisError(msg);
     } finally {
       clearInterval(stageInterval);
       setAnalyzing(false);
@@ -221,7 +222,7 @@ Software Engineering Intern — TechNova Solutions (June 2025 - August 2025)
     try {
       const res = await api.generateTailoredSummary(rawText || defaultSampleResume, targetRole);
       setGeneratedSummary(res);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.warn('Summary generation error:', err);
     } finally {
       setGeneratingSummary(false);
@@ -527,7 +528,7 @@ Software Engineering Intern — TechNova Solutions (June 2025 - August 2025)
 
                 {/* AI Briefing Callout */}
                 <div className="p-4 rounded-xl border border-border bg-surface-muted flex items-center gap-3.5">
-                  <CoachAvatar mood={analysis.coach_feedback.state as any} size="sm" animate={false} />
+                  <CoachAvatar mood={analysis.coach_feedback.state as CoachMood} size="sm" animate={false} />
                   <p className="text-xs text-foreground-secondary font-normal leading-relaxed">
                     {analysis.coach_feedback.message}
                   </p>
@@ -550,7 +551,7 @@ Software Engineering Intern — TechNova Solutions (June 2025 - August 2025)
                 ].map(tab => (
                   <button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id as any)}
+                    onClick={() => setActiveTab(tab.id as Parameters<typeof setActiveTab>[0])}
                     className={`px-3.5 py-1.5 rounded-full text-xs font-sans whitespace-nowrap transition-all cursor-pointer ${
                       activeTab === tab.id
                         ? 'bg-primary text-primary-foreground font-medium'
@@ -1016,7 +1017,7 @@ Software Engineering Intern — TechNova Solutions (June 2025 - August 2025)
                             Current Bullet Point
                           </span>
                           <p className="text-xs text-foreground-secondary italic leading-relaxed">
-                            "{b.original}"
+                            &ldquo;{b.original}&rdquo;
                           </p>
                           <span className="text-[10px] text-foreground-muted block pt-1">
                             <strong className="text-foreground-secondary">Why it is weak:</strong> {b.weakness_reason}
@@ -1029,7 +1030,7 @@ Software Engineering Intern — TechNova Solutions (June 2025 - August 2025)
                             Factually Grounded Suggestion
                           </span>
                           <p className="text-xs text-foreground font-medium leading-relaxed">
-                            "{b.suggested_improvement}"
+                            &ldquo;{b.suggested_improvement}&rdquo;
                           </p>
 
                           <button

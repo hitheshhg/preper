@@ -1,6 +1,5 @@
 import {
   Profile,
-  ResumeAnalysis,
   ResumeAnalysisV2,
   ResumeVersionRecord,
   TailoredSummaryResponse,
@@ -11,7 +10,12 @@ import {
   GDEvaluation,
   DashboardData,
   SkillNode,
-  RoadmapData
+  RoadmapData,
+  CompanyBlueprint,
+  QuestionBankItem,
+  CoachChatResponse,
+  AdaptiveAnswerResponse,
+  IntegrityEvent
 } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -47,7 +51,7 @@ export const api = {
   getProfile: (userId = 'demo-user-123') =>
     fetchWithFallback<Profile>(`/api/auth/profile/${userId}`),
 
-  submitOnboarding: (data: any) =>
+  submitOnboarding: (data: Record<string, unknown>) =>
     fetchWithFallback<Profile>('/api/auth/onboarding', {
       method: 'POST',
       body: JSON.stringify(data)
@@ -121,12 +125,12 @@ export const api = {
     time_taken_seconds: number;
     confidence_metric?: number;
   }) =>
-    fetchWithFallback<any>('/api/interviews/answer', {
+    fetchWithFallback<AdaptiveAnswerResponse>('/api/interviews/answer', {
       method: 'POST',
       body: JSON.stringify(params)
     }),
 
-  logIntegrityEvent: (interviewId: string, event: any) =>
+  logIntegrityEvent: (interviewId: string, event: IntegrityEvent | Record<string, unknown>) =>
     fetchWithFallback<{ status: string; integrity_score: number }>('/api/interviews/integrity', {
       method: 'POST',
       body: JSON.stringify({ interview_id: interviewId, event })
@@ -164,8 +168,8 @@ export const api = {
     }),
 
   // AI Career Coach
-  chatCoach: (message: string, history: any[] = []) =>
-    fetchWithFallback<any>('/api/coach/chat', {
+  chatCoach: (message: string, history: Array<{ role: string; content: string }> = []) =>
+    fetchWithFallback<CoachChatResponse>('/api/coach/chat', {
       method: 'POST',
       body: JSON.stringify({ message, conversation_history: history })
     }),
@@ -176,15 +180,15 @@ export const api = {
 
   // Gamification & Quests
   claimQuest: (questId: string) =>
-    fetchWithFallback<any>(`/api/quests/${questId}/claim`, { method: 'POST' }),
-  getAchievements: () => fetchWithFallback<any[]>('/api/achievements'),
+    fetchWithFallback<Record<string, unknown>>(`/api/quests/${questId}/claim`, { method: 'POST' }),
+  getAchievements: () => fetchWithFallback<Record<string, unknown>[]>('/api/achievements'),
 
   // Catalog
-  getCompanies: () => fetchWithFallback<any[]>('/api/companies'),
+  getCompanies: () => fetchWithFallback<CompanyBlueprint[]>('/api/companies'),
   getQuestions: (category?: string, difficulty?: string) => {
     const params = new URLSearchParams();
     if (category) params.append('category', category);
     if (difficulty) params.append('difficulty', difficulty);
-    return fetchWithFallback<any[]>(`/api/questions?${params.toString()}`);
+    return fetchWithFallback<QuestionBankItem[]>(`/api/questions?${params.toString()}`);
   }
 };

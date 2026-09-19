@@ -363,3 +363,44 @@ export interface RoadmapData {
   current_week: number;
   tasks: RoadmapTask[];
 }
+
+export interface CompanyBlueprint {
+  id: string;
+  name: string;
+  logo: string;
+  tier: string;
+  rounds: string[];
+  primary_skills: string[];
+  interview_style: string;
+  difficulty: string;
+  recommended_mock: string;
+}
+
+export interface QuestionBankItem {
+  id: string;
+  category: string;
+  topic: string;
+  difficulty: string;
+  question: string;
+  expected_concepts: string[];
+  model_answer: string;
+}
+
+export interface CoachChatResponse {
+  reply: string;
+  coach_state: string;
+  suggested_actions?: Array<{ label: string; link: string }>;
+}
+
+export interface AdaptiveAnswerResponse {
+  is_completed?: boolean;
+  step?: number;
+  total_steps?: number;
+  is_followup?: boolean;
+  adapted_difficulty?: string;
+  immediate_feedback?: string;
+  feedback?: string;
+  next_question?: InterviewQuestion | null;
+  coach_reaction?: CoachReaction;
+}
+

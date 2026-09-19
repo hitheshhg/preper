@@ -89,63 +89,73 @@ function InterviewSessionContent() {
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const sessionTimerRef = useRef<NodeJS.Timeout | null>(null);
   const liveStateRef = useRef<InterviewLiveState>(liveState);
-  liveStateRef.current = liveState;
+  useEffect(() => {
+    liveStateRef.current = liveState;
+  }, [liveState]);
+  const speakQuestionAndListenRef = useRef<(text: string) => void>(() => {});
 
   // -------------------------------------------------------------
   // 1. PREFLIGHT HARDWARE DIAGNOSTICS
   // -------------------------------------------------------------
-  const startHardwareDiagnostics = useCallback(async () => {
-    try {
-      setPreflightError(null);
-      const stream = await navigator.mediaDevices.getUserMedia({
+  useEffect(() => {
+    let isMounted = true;
+    if (typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({
         video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
         audio: true
+      })
+      .then(stream => {
+        if (!isMounted) {
+          stream.getTracks().forEach(t => t.stop());
+          return;
+        }
+
+        mediaStreamRef.current = stream;
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+        setCameraActive(true);
+        setMicActive(true);
+
+        const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (AudioCtx) {
+          const audioCtx = new AudioCtx();
+          const analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 256;
+          const source = audioCtx.createMediaStreamSource(stream);
+          source.connect(analyser);
+
+          audioContextRef.current = audioCtx;
+          analyserRef.current = analyser;
+
+          const dataArray = new Uint8Array(analyser.frequencyBinCount);
+          const checkVolume = () => {
+            if (!analyserRef.current) return;
+            analyserRef.current.getByteFrequencyData(dataArray);
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+              sum += dataArray[i];
+            }
+            const avg = sum / dataArray.length;
+            setMicVolume(Math.min(100, Math.round((avg / 128) * 100)));
+            animFrameRef.current = requestAnimationFrame(checkVolume);
+          };
+          checkVolume();
+        }
+      })
+      .catch((err: unknown) => {
+        if (isMounted) {
+          console.warn('Hardware access error:', err);
+          setPreflightError(
+            'Camera or microphone permission was denied. You can proceed using text responses or click the lock icon in your browser to allow permissions.'
+          );
+        }
       });
-
-      mediaStreamRef.current = stream;
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-      setCameraActive(true);
-      setMicActive(true);
-
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioCtx) {
-        const audioCtx = new AudioCtx();
-        const analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 256;
-        const source = audioCtx.createMediaStreamSource(stream);
-        source.connect(analyser);
-
-        audioContextRef.current = audioCtx;
-        analyserRef.current = analyser;
-
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
-        const checkVolume = () => {
-          if (!analyserRef.current) return;
-          analyserRef.current.getByteFrequencyData(dataArray);
-          let sum = 0;
-          for (let i = 0; i < dataArray.length; i++) {
-            sum += dataArray[i];
-          }
-          const avg = sum / dataArray.length;
-          setMicVolume(Math.min(100, Math.round((avg / 128) * 100)));
-          animFrameRef.current = requestAnimationFrame(checkVolume);
-        };
-        checkVolume();
-      }
-    } catch (err: any) {
-      console.warn('Hardware access error:', err);
-      setPreflightError(
-        'Camera or microphone permission was denied. You can proceed using text responses or click the lock icon in your browser to allow permissions.'
-      );
     }
-  }, []);
 
-  useEffect(() => {
-    startHardwareDiagnostics();
     return () => {
+      isMounted = false;
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach(t => t.stop());
       }
@@ -156,7 +166,7 @@ function InterviewSessionContent() {
         cancelAnimationFrame(animFrameRef.current);
       }
     };
-  }, [startHardwareDiagnostics]);
+  }, []);
 
   const testSpeakerSound = () => {
     try {
@@ -324,14 +334,14 @@ function InterviewSessionContent() {
             }).catch(e => console.warn('Error saving interview to PostgreSQL:', e));
           }
         } else {
-          setStep(res.step);
-          setCurrentQuestion(res.next_question);
+          if (res.step !== undefined) setStep(res.step);
+          if (res.next_question !== undefined) setCurrentQuestion(res.next_question);
           setTranscript('');
           setInterimTranscript('');
           setInterviewerMsg(res.coach_reaction?.message || res.immediate_feedback || 'Continuing to next question.');
 
           if (res.next_question) {
-            speakQuestionAndListen(res.next_question.question_text);
+            speakQuestionAndListenRef.current(res.next_question.question_text);
           }
         }
       } catch (err) {
@@ -474,6 +484,10 @@ function InterviewSessionContent() {
     },
     [startListening]
   );
+
+  useEffect(() => {
+    speakQuestionAndListenRef.current = speakQuestionAndListen;
+  }, [speakQuestionAndListen]);
 
   const handleInterruptAi = () => {
     if ('speechSynthesis' in window) {

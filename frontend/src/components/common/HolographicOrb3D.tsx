@@ -125,12 +125,12 @@ export function HolographicOrb3D({
       // Project points to 2D screen
       const projected = points.map(pt => {
         // Rotate around Y
-        let x1 = pt.origX * cosY - pt.origZ * sinY;
-        let z1 = pt.origZ * cosY + pt.origX * sinY;
+        const x1 = pt.origX * cosY - pt.origZ * sinY;
+        const z1 = pt.origZ * cosY + pt.origX * sinY;
 
         // Rotate around X
-        let y2 = pt.origY * cosX - z1 * sinX;
-        let z2 = z1 * cosX + pt.origY * sinX;
+        const y2 = pt.origY * cosX - z1 * sinX;
+        const z2 = z1 * cosX + pt.origY * sinX;
 
         // Pulse expansion
         const pulseFactor = pulse ? 1 + Math.sin(time * 3) * 0.06 : 1;

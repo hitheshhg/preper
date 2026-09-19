@@ -9,7 +9,6 @@ import {
   User,
   Shield,
   LogOut,
-  Bell,
   ChevronDown
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
@@ -24,15 +23,16 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({
   user,
-  userName,
   streak = 0
 }) => {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [activeUser, setActiveUser] = useState<SessionUser | null>(user || null);
+  const [fetchedUser, setFetchedUser] = useState<SessionUser | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  const currentUser = user !== undefined ? user : fetchedUser;
 
   const navLinks = [
     { href: '/dashboard', label: 'Dashboard' },
@@ -43,15 +43,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   ];
 
   useEffect(() => {
-    if (user) {
-      setActiveUser(user);
-      return;
+    if (user === undefined) {
+      getCurrentUser()
+        .then(u => {
+          if (u) setFetchedUser(u);
+        })
+        .catch(() => {});
     }
-    getCurrentUser()
-      .then(u => {
-        if (u) setActiveUser(u);
-      })
-      .catch(() => {});
   }, [user]);
 
   useEffect(() => {
@@ -66,7 +64,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   async function handleLogout() {
     await logoutAction();
-    setActiveUser(null);
+    setFetchedUser(null);
     router.push('/');
     router.refresh();
   }
@@ -76,7 +74,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-[1360px] mx-auto px-6 sm:px-10 h-18 flex items-center justify-between">
         {/* Left: Typographic Wordmark PREPR */}
         <div className="flex items-center gap-6">
-          <Link href={activeUser ? '/dashboard' : '/'} className="group flex items-center gap-3">
+          <Link href={currentUser ? '/dashboard' : '/'} className="group flex items-center gap-3">
             <span className="font-serif text-xl tracking-[0.22em] font-normal text-foreground transition-opacity group-hover:opacity-75 uppercase">
               PREPR
             </span>
@@ -126,7 +124,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <ThemeToggle />
 
           {/* User Profile Dropdown or Sign In */}
-          {activeUser ? (
+          {currentUser ? (
             <div className="relative" ref={userMenuRef}>
               <button
                 type="button"
@@ -136,10 +134,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 aria-label="User profile menu"
               >
                 <div className="w-6 h-6 rounded-full bg-surface-muted flex items-center justify-center text-[10px] font-medium text-foreground">
-                  {activeUser.name ? activeUser.name.charAt(0).toUpperCase() : 'U'}
+                  {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
                 </div>
                 <span className="hidden sm:inline-block text-[11px] font-medium max-w-[100px] truncate">
-                  {activeUser.name || activeUser.email.split('@')[0]}
+                  {currentUser.name || currentUser.email.split('@')[0]}
                 </span>
                 <ChevronDown className="w-3 h-3 text-foreground-muted" />
               </button>
@@ -147,8 +145,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               {userMenuOpen && (
                 <div className="absolute right-0 mt-2 w-56 bg-surface border border-border rounded-2xl shadow-lg p-2 text-xs z-50 space-y-1">
                   <div className="px-3 py-2 border-b border-border">
-                    <p className="font-serif text-sm font-normal text-foreground truncate">{activeUser.name || 'Candidate'}</p>
-                    <p className="text-[10px] font-mono text-foreground-muted truncate">{activeUser.email}</p>
+                    <p className="font-serif text-sm font-normal text-foreground truncate">{currentUser.name || 'Candidate'}</p>
+                    <p className="text-[10px] font-mono text-foreground-muted truncate">{currentUser.email}</p>
                   </div>
 
                   <Link
@@ -160,7 +158,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <span>Candidate Profile</span>
                   </Link>
 
-                  {activeUser.role === 'ADMIN' && (
+                  {currentUser.role === 'ADMIN' && (
                     <Link
                       href="/admin"
                       onClick={() => setUserMenuOpen(false)}
@@ -236,7 +234,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               );
             })}
 
-            {activeUser?.role === 'ADMIN' && (
+            {currentUser?.role === 'ADMIN' && (
               <Link
                 href="/admin"
                 onClick={() => setMobileMenuOpen(false)}
@@ -248,7 +246,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </nav>
 
           <div className="pt-4 border-t border-border flex items-center justify-between">
-            {activeUser ? (
+            {currentUser ? (
               <button
                 type="button"
                 onClick={() => {

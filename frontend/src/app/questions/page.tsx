@@ -12,8 +12,18 @@ import {
   CheckCircle2
 } from 'lucide-react';
 
+export interface QuestionBankItem {
+  id: string;
+  category: string;
+  topic: string;
+  difficulty: string;
+  question: string;
+  expected_concepts: string[];
+  model_answer: string;
+}
+
 export default function QuestionsPage() {
-  const [questions, setQuestions] = useState<any[]>([]);
+  const [questions, setQuestions] = useState<QuestionBankItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedDifficulty, setSelectedDifficulty] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');

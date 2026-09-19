@@ -37,8 +37,21 @@ export default function GDSimulatorPage() {
   };
 
   useEffect(() => {
-    startNewGDRoom();
-  }, []);
+    let isMounted = true;
+    api.createGDSession(topic)
+      .then(res => {
+        if (isMounted) {
+          setSession(res);
+          setTimerSeconds(300);
+        }
+      })
+      .catch(err => {
+        console.warn('GD room creation error:', err);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [topic]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

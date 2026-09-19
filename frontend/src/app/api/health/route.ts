@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/client';
-import { isDatabaseConfigured, isOpenAIConfigured, isGeminiConfigured, env } from '@/lib/config/env';
+import { isDatabaseConfigured, isOpenAIConfigured, env } from '@/lib/config/env';
 
 export async function GET() {
   let dbStatus = 'disconnected';
@@ -17,12 +17,6 @@ export async function GET() {
     }
   }
 
-  const aiProvider = isGeminiConfigured
-    ? `Google Gemini (${env.GEMINI_MODEL})`
-    : isOpenAIConfigured
-    ? `OpenAI (${env.OPENAI_MODEL})`
-    : 'MockAI (Simulation Mode)';
-
   return NextResponse.json({
     status: 'ok',
     app: env.NEXT_PUBLIC_APP_NAME,
@@ -34,9 +28,9 @@ export async function GET() {
       configured: isDatabaseConfigured,
     },
     ai: {
-      provider: aiProvider,
-      configured: isGeminiConfigured || isOpenAIConfigured,
-      model: isGeminiConfigured ? env.GEMINI_MODEL : env.OPENAI_MODEL,
+      provider: isOpenAIConfigured ? 'OpenAI' : 'MockAI (Simulation Mode)',
+      configured: isOpenAIConfigured,
+      model: env.OPENAI_MODEL,
     },
   });
 }

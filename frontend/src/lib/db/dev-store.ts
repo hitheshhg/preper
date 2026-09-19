@@ -22,13 +22,23 @@ export interface DevUser {
     confidenceLevel?: number;
     completionPercent?: number;
   };
-  interviews?: any[];
-  resumes?: any[];
+  interviews?: unknown[];
+  resumes?: unknown[];
+}
+
+export interface DevAuditLog {
+  id: string;
+  createdAt: string;
+  actorId?: string;
+  action: string;
+  resource: string;
+  actor?: { email?: string; name?: string };
+  metadata?: Record<string, unknown>;
 }
 
 interface DevDatabase {
   users: DevUser[];
-  auditLogs: any[];
+  auditLogs: DevAuditLog[];
 }
 
 const DB_FILE = path.join(process.cwd(), '.prepr-dev-db.json');
@@ -76,7 +86,7 @@ export const devDb = {
     return user;
   },
 
-  updateUserProfile(userId: string, profileData: any): DevUser | null {
+  updateUserProfile(userId: string, profileData: Record<string, unknown>): DevUser | null {
     const db = readDb();
     const user = db.users.find(u => u.id === userId);
     if (!user) return null;
@@ -85,7 +95,7 @@ export const devDb = {
       ...(user.profile || {}),
       ...profileData,
     };
-    if (profileData.name) {
+    if (typeof profileData.name === 'string') {
       user.name = profileData.name;
     }
     writeDb(db);
@@ -106,13 +116,18 @@ export const devDb = {
     return db.users;
   },
 
-  logAudit(entry: any) {
+  logAudit(entry: Record<string, unknown>) {
     const db = readDb();
-    db.auditLogs.unshift({
+    const auditEntry: DevAuditLog = {
       id: `audit_${Date.now()}`,
       createdAt: new Date().toISOString(),
+      action: typeof entry.action === 'string' ? entry.action : 'UNKNOWN_ACTION',
+      resource: typeof entry.resource === 'string' ? entry.resource : 'UNKNOWN_RESOURCE',
+      actorId: typeof entry.actorId === 'string' ? entry.actorId : undefined,
+      metadata: typeof entry.metadata === 'object' && entry.metadata !== null ? (entry.metadata as Record<string, unknown>) : undefined,
       ...entry,
-    });
+    };
+    db.auditLogs.unshift(auditEntry);
     if (db.auditLogs.length > 50) db.auditLogs.pop();
     writeDb(db);
   },

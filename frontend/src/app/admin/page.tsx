@@ -6,10 +6,12 @@ import { getAdminOverviewAction, updateUserRoleAction } from '@/app/actions/admi
 import { Shield, ShieldAlert, Users, FileText, Video, Activity, Clock, RefreshCw, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 
+type AdminData = Awaited<ReturnType<typeof getAdminOverviewAction>>;
+
 export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<AdminData | null>(null);
   const [updatingUser, setUpdatingUser] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -19,15 +21,31 @@ export default function AdminPage() {
     try {
       const res = await getAdminOverviewAction();
       setData(res);
-    } catch (err: any) {
-      setError(err.message || 'Access denied: Administrator privileges required.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Access denied: Administrator privileges required.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
+    let isMounted = true;
+    getAdminOverviewAction()
+      .then(res => {
+        if (isMounted) {
+          setData(res);
+          setLoading(false);
+        }
+      })
+      .catch((err: unknown) => {
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Access denied: Administrator privileges required.');
+          setLoading(false);
+        }
+      });
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleRoleToggle = async (userId: string, currentRole: string) => {
@@ -38,8 +56,8 @@ export default function AdminPage() {
       await updateUserRoleAction(userId, newRole);
       setMessage(`Updated user role to ${newRole}`);
       await loadData();
-    } catch (err: any) {
-      setError(err.message || 'Failed to update user role');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to update user role');
     } finally {
       setUpdatingUser(null);
     }
@@ -192,7 +210,7 @@ export default function AdminPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border font-mono">
-                {data?.recentUsers?.map((u: any) => (
+                {data?.recentUsers?.map(u => (
                   <tr key={u.id} className="hover:bg-muted/20 transition-colors">
                     <td className="py-3 px-4">
                       <div className="font-sans font-medium text-foreground">{u.name || 'Unnamed Candidate'}</div>
@@ -218,7 +236,7 @@ export default function AdminPage() {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <button
-                        onClick={() => handleRoleToggle(u.id, u.role)}
+                        onClick={() => handleRoleToggle(u.id, u.role as 'USER' | 'ADMIN')}
                         disabled={updatingUser === u.id || u.id === data?.admin?.id}
                         className="text-[11px] px-2.5 py-1 rounded border border-border hover:border-foreground/40 disabled:opacity-40 cursor-pointer"
                       >
@@ -265,7 +283,7 @@ export default function AdminPage() {
                     </td>
                   </tr>
                 ) : (
-                  data?.recentLogs?.map((log: any) => (
+                  data?.recentLogs?.map(log => (
                     <tr key={log.id} className="hover:bg-muted/20 transition-colors">
                       <td className="py-3 px-4 text-foreground-muted">
                         {new Date(log.createdAt).toLocaleTimeString()} · {new Date(log.createdAt).toLocaleDateString()}
