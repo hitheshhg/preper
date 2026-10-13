@@ -106,7 +106,7 @@ export default function GDSimulatorPage() {
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-lavender selection:text-foreground transition-colors duration-200">
       <Navbar />
 
-        <main className="flex-1 max-w-5xl mx-auto w-full px-6 sm:px-12 py-10 lg:py-14 space-y-12 max-w-4xl overflow-y-auto">
+        <main className="flex-1 max-w-5xl mx-auto w-full px-6 sm:px-12 py-10 lg:py-14 space-y-12 overflow-y-auto">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-border pb-8">
             <div className="space-y-3 max-w-xl">

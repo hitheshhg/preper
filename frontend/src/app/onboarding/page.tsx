@@ -136,6 +136,22 @@ export default function OnboardingPage() {
         dailyGoalMinutes: Number(formData.daily_goal_minutes),
         confidenceLevel: Number(formData.confidence_level),
       });
+
+      // Synchronize with FastAPI AI intelligence engine
+      await api.submitOnboarding({
+        full_name: formData.full_name || 'Candidate',
+        college: formData.college,
+        degree: formData.degree,
+        branch: formData.branch,
+        graduation_year: Number(formData.graduation_year),
+        target_role: formData.target_role,
+        target_companies: formData.target_companies,
+        experience_level: formData.experience_level,
+        strongest_skills: formData.strongest_skills,
+        weakest_skills: formData.weakest_skills,
+        daily_goal_minutes: Number(formData.daily_goal_minutes),
+        confidence_level: Number(formData.confidence_level),
+      }).catch(err => console.warn('FastAPI onboarding sync note:', err));
     } catch (e) {
       console.warn('Backend onboarding profile update fallback:', e);
     }

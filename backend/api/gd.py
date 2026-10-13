@@ -100,8 +100,8 @@ def create_gd_session(data: GDCreateRequest):
     GD_SESSIONS[session_id] = {
         "session_id": session_id,
         "topic": topic,
-        "participants": [p.dict() for p in selected_personas],
-        "messages": [first_msg.dict()],
+        "participants": [p.model_dump() for p in selected_personas],
+        "messages": [first_msg.model_dump()],
         "status": "active"
     }
 
@@ -131,7 +131,7 @@ def post_user_message(data: GDUserMessageRequest):
         message=data.message,
         timestamp_seconds=last_time + 15
     )
-    curr_messages.append(user_msg.dict())
+    curr_messages.append(user_msg.model_dump())
 
     # AI bot reacts to user
     participants = session["participants"]
@@ -155,7 +155,7 @@ def post_user_message(data: GDUserMessageRequest):
         message=ai_reply_text,
         timestamp_seconds=last_time + 30
     )
-    curr_messages.append(ai_msg.dict())
+    curr_messages.append(ai_msg.model_dump())
 
     return GDSessionState(
         session_id=session["session_id"],
@@ -173,8 +173,9 @@ def complete_gd_session(session_id: str):
 
     evaluation = ai_service.evaluate_gd_session(topic=topic, messages=messages)
 
-    if "demo-user-123" in USER_PROFILES:
-        USER_PROFILES["demo-user-123"]["total_xp"] += evaluation.xp_earned
-        USER_PROFILES["demo-user-123"]["communication_score"] = min(99, USER_PROFILES["demo-user-123"]["communication_score"] + 3)
+    user_id = session.get("user_id", "demo-user-123") if session else "demo-user-123"
+    if user_id in USER_PROFILES:
+        USER_PROFILES[user_id]["total_xp"] += evaluation.xp_earned
+        USER_PROFILES[user_id]["communication_score"] = min(99, USER_PROFILES[user_id]["communication_score"] + 3)
 
     return evaluation

@@ -146,6 +146,7 @@ export interface ResumeAnalysisV2 {
   tailored_summary: string;
   score_history: ResumeVersionRecord[];
   coach_feedback: CoachReaction;
+  raw_text?: string;
 }
 
 export interface TailoredSummaryResponse {

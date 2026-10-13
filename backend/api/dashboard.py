@@ -17,7 +17,7 @@ router = APIRouter(prefix="/dashboard", tags=["Dashboard & Recommendations"])
 @router.get("/overview", response_model=DashboardOverviewResponse)
 def get_dashboard_overview(user_id: str = "demo-user-123"):
     profile = get_profile(user_id)
-    prof_dict = profile.dict()
+    prof_dict = profile.model_dump()
 
     readiness = readiness_engine.get_breakdown(prof_dict)
 

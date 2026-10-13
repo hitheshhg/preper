@@ -141,12 +141,17 @@ Software Engineering Intern — TechNova Solutions (June 2025 - August 2025)
       if (result.score_history) {
         setHistory(result.score_history);
       }
+      if (result.raw_text) {
+        setRawText(result.raw_text);
+      }
       triggerConfetti();
+
+      const candidateResumeText = result.raw_text || rawText || defaultSampleResume;
 
       // Persist resume and analysis to PostgreSQL
       saveResumeAnalysisAction({
         fileName: result.file_name || 'candidate_resume.txt',
-        rawText: rawText || defaultSampleResume,
+        rawText: candidateResumeText,
         targetRole,
         overallScore: result.overall_score || 78,
         atsScore: result.detailed_scores?.ats_compatibility?.score || 84,
@@ -220,7 +225,8 @@ Software Engineering Intern — TechNova Solutions (June 2025 - August 2025)
     if (!analysis) return;
     setGeneratingSummary(true);
     try {
-      const res = await api.generateTailoredSummary(rawText || defaultSampleResume, targetRole);
+      const textToAnalyze = rawText || analysis.raw_text || defaultSampleResume;
+      const res = await api.generateTailoredSummary(textToAnalyze, targetRole);
       setGeneratedSummary(res);
     } catch (err: unknown) {
       console.warn('Summary generation error:', err);

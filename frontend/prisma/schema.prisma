@@ -64,6 +64,22 @@ model Profile {
   confidenceLevel     Int      @default(60)
   completionPercent   Int      @default(0)
   onboardingCompleted Boolean  @default(false)
+
+  // Gamification Metrics
+  totalXp             Int      @default(0)
+  currentLevel        Int      @default(1)
+  currentStreak       Int      @default(1)
+  maxStreak           Int      @default(1)
+
+  // Placement Readiness Scores
+  readinessScore      Int      @default(65)
+  technicalScore      Int      @default(60)
+  codingScore         Int      @default(60)
+  communicationScore  Int      @default(70)
+  hrScore             Int      @default(75)
+  resumeScore         Int      @default(65)
+  problemSolvingScore Int      @default(60)
+
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
@@ -124,10 +140,12 @@ model Interview {
   problemSolvingScore Int?
   confidenceScore     Int?
   integrityScore      Int?                @default(100)
-  strengths           String[]            @default([])
-  weaknesses          String[]            @default([])
-  recommendations     String[]            @default([])
-  questions           InterviewQuestion[]
+  strengths                String[]            @default([])
+  weaknesses               String[]            @default([])
+  recommendations          String[]            @default([])
+  modelAnswerHighlights    String?             @db.Text
+  followUpRecommendations  String[]            @default([])
+  questions                InterviewQuestion[]
   createdAt           DateTime            @default(now())
   completedAt         DateTime?
 

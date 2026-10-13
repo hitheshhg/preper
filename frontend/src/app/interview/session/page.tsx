@@ -40,6 +40,7 @@ import { saveCompletedInterviewAction } from '@/app/actions/interview';
 function InterviewSessionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const reviewId = searchParams.get('id');
   const mode = searchParams.get('mode') || 'Technical';
   const role = searchParams.get('role') || 'Software Development Engineer';
   const difficulty = searchParams.get('difficulty') || 'Medium';
@@ -47,8 +48,8 @@ function InterviewSessionContent() {
   const durationParam = parseInt(searchParams.get('duration') || '15', 10);
 
   // Core Lifecycle State Machine
-  const [liveState, setLiveState] = useState<InterviewLiveState>('PREFLIGHT');
-  const [interviewId, setInterviewId] = useState<string>('');
+  const [liveState, setLiveState] = useState<InterviewLiveState>(reviewId ? 'COMPLETED' : 'PREFLIGHT');
+  const [interviewId, setInterviewId] = useState<string>(reviewId || '');
   const [step, setStep] = useState(1);
   const [totalSteps, setTotalSteps] = useState(questionCountParam);
   const [durationMinutes, setDurationMinutes] = useState(durationParam);
@@ -94,10 +95,42 @@ function InterviewSessionContent() {
   }, [liveState]);
   const speakQuestionAndListenRef = useRef<(text: string) => void>(() => {});
 
+  // Load past evaluation if review mode
+  useEffect(() => {
+    if (reviewId) {
+      api.getInterviewEvaluation(reviewId)
+        .then(evalReport => {
+          if (evalReport) {
+            setEvaluation(evalReport);
+            setLiveState('COMPLETED');
+          }
+        })
+        .catch(err => {
+          console.warn('Failed to load past evaluation report:', err);
+        });
+    }
+  }, [reviewId]);
+
+  // Teardown / Cleanup on Unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (sessionTimerRef.current) clearInterval(sessionTimerRef.current);
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close().catch(() => {});
+      }
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach(t => t.stop());
+      }
+    };
+  }, []);
+
   // -------------------------------------------------------------
   // 1. PREFLIGHT HARDWARE DIAGNOSTICS
   // -------------------------------------------------------------
   useEffect(() => {
+    if (reviewId) return; // Skip hardware preflight when reviewing a completed session
     let isMounted = true;
     if (typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
       navigator.mediaDevices.getUserMedia({
@@ -345,44 +378,68 @@ function InterviewSessionContent() {
           }
         }
       } catch (err) {
-        setLiveState('COMPLETED');
-        const evalReport = await api.getInterviewEvaluation(interviewId || 'interview-demo-1');
-        setEvaluation(evalReport);
-        triggerConfetti();
+        console.warn('Error submitting interview answer:', err);
+        if (step >= totalSteps) {
+          setLiveState('COMPLETED');
+          const evalReport = await api.getInterviewEvaluation(interviewId || 'interview-demo-1');
+          setEvaluation(evalReport);
+          triggerConfetti();
 
-        if (evalReport) {
-          saveCompletedInterviewAction({
-            interviewId: evalReport.interview_id,
-            role,
-            mode,
+          if (evalReport) {
+            saveCompletedInterviewAction({
+              interviewId: evalReport.interview_id,
+              role,
+              mode,
+              difficulty,
+              overallScore: evalReport.overall_score || 80,
+              technicalScore: evalReport.technical_score || 80,
+              communicationScore: evalReport.communication_score || 80,
+              structureScore: evalReport.structure_score || 80,
+              problemSolvingScore: evalReport.problem_solving_score || 80,
+              confidenceScore: evalReport.confidence_score || 80,
+              integrityScore: evalReport.integrity_score ?? 100,
+              strengths: evalReport.strengths || [],
+              weaknesses: evalReport.weaknesses || [],
+              recommendations: evalReport.actionable_recommendations || [],
+              questionsWithAnswers: (evalReport.question_reviews || []).map((q: any) => ({
+                order: q.question_order,
+                question: q.question_text,
+                category: q.category,
+                userAnswer: q.user_answer,
+                score: q.score,
+                feedback: q.ideal_answer_structure,
+                strengths: q.strengths,
+                weaknesses: q.weaknesses,
+              })),
+            }).catch(e => console.warn('Error saving interview fallback:', e));
+          }
+        } else {
+          // Graceful fallback: advance to next question without dropping session
+          const nextStep = step + 1;
+          setStep(nextStep);
+          setTranscript('');
+          setInterimTranscript('');
+          const fallbackQ: InterviewQuestion = {
+            id: `q-${nextStep}`,
+            question_order: nextStep,
+            question_text: nextStep === 2
+              ? 'Can you explain the trade-offs between SQL and NoSQL databases when designing high-concurrency systems?'
+              : nextStep === 3
+              ? 'How do you approach debugging a memory leak or CPU spike in a production distributed service?'
+              : 'Describe a challenging engineering bug you diagnosed and the methodology you used to resolve it.',
+            category: 'System Design & Problem Solving',
             difficulty,
-            overallScore: evalReport.overall_score || 80,
-            technicalScore: evalReport.technical_score || 80,
-            communicationScore: evalReport.communication_score || 80,
-            structureScore: evalReport.structure_score || 80,
-            problemSolvingScore: evalReport.problem_solving_score || 80,
-            confidenceScore: evalReport.confidence_score || 80,
-            integrityScore: evalReport.integrity_score ?? 100,
-            strengths: evalReport.strengths || [],
-            weaknesses: evalReport.weaknesses || [],
-            recommendations: evalReport.actionable_recommendations || [],
-            questionsWithAnswers: (evalReport.question_reviews || []).map((q: any) => ({
-              order: q.question_order,
-              question: q.question_text,
-              category: q.category,
-              userAnswer: q.user_answer,
-              score: q.score,
-              feedback: q.ideal_answer_structure,
-              strengths: q.strengths,
-              weaknesses: q.weaknesses,
-            })),
-          }).catch(e => console.warn('Error saving interview fallback:', e));
+            expected_concepts: ['Trade-off analysis', 'Production diagnostics', 'Root-cause analysis']
+          };
+          setCurrentQuestion(fallbackQ);
+          setInterviewerMsg('Network latency detected. Continuing to the next question gracefully.');
+          speakQuestionAndListenRef.current(fallbackQ.question_text);
         }
       } finally {
         setIsSubmitting(false);
       }
     },
-    [interviewId, currentQuestion, step, totalSteps, stopListening]
+    [interviewId, currentQuestion, step, totalSteps, role, mode, difficulty, stopListening]
   );
 
   const startListening = useCallback(() => {
@@ -429,7 +486,7 @@ function InterviewSessionContent() {
           }
           silenceTimerRef.current = setTimeout(() => {
             handleAnswerSubmit(candidateText);
-          }, 1800);
+          }, 4000);
         }
       };
 

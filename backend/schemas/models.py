@@ -155,6 +155,7 @@ class ResumeAnalysisV2(BaseModel):
     tailored_summary: str = ""
     score_history: List[ResumeVersionRecord] = []
     coach_feedback: CoachReaction
+    raw_text: Optional[str] = ""
 
 class ResumeAnalyzeRequest(BaseModel):
     user_id: Optional[str] = "demo-user-123"

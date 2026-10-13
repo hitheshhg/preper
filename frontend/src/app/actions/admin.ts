@@ -50,12 +50,14 @@ export async function getAdminOverviewAction() {
     console.warn('[Prepr Admin] Prisma offline, loading from devDb');
     const users = devDb.getAllUsers();
     const logs = devDb.getAuditLogs();
+    const allInterviews = devDb.getAllInterviews();
+    const allResumes = devDb.getAllResumes();
     return {
       admin: { id: admin.id, name: admin.name, email: admin.email },
       stats: {
         totalUsers: users.length,
-        totalInterviews: 0,
-        totalResumes: 0,
+        totalInterviews: allInterviews.length,
+        totalResumes: allResumes.length,
         totalAuditLogs: logs.length,
       },
       recentLogs: logs,
@@ -66,7 +68,10 @@ export async function getAdminOverviewAction() {
         role: u.role,
         createdAt: u.createdAt,
         profile: u.profile,
-        _count: { interviews: 0, resumes: 0 },
+        _count: {
+          interviews: devDb.getUserInterviews(u.id).length,
+          resumes: devDb.getUserResumes(u.id).length,
+        },
       })),
     };
   }

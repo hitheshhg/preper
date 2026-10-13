@@ -46,7 +46,8 @@ async def global_exception_handler(request: Request, exc: Exception):
         }
     )
 
-# Register API Routers with standard /api prefix
+# Register API Routers with standard /api prefix and operational aliases
+app.include_router(health_router, prefix="")
 app.include_router(health_router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
 app.include_router(resume_router, prefix="/api")
@@ -57,6 +58,7 @@ app.include_router(coach_router, prefix="/api")
 app.include_router(skills_router, prefix="/api")
 app.include_router(roadmaps_router, prefix="/api")
 app.include_router(gamification_router, prefix="/api")
+app.include_router(gamification_router, prefix="/api/gamification")
 app.include_router(catalog_router, prefix="/api")
 
 @app.get("/")

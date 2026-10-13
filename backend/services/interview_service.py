@@ -58,7 +58,7 @@ class InterviewService:
             "status": "in_progress",
             "created_at": datetime.now().isoformat(),
             "history": [], # List of answered questions + evaluations
-            "current_question": first_question.dict(),
+            "current_question": first_question.model_dump(),
             "integrity_events": [],
             "integrity_score": 100
         }
@@ -150,12 +150,13 @@ class InterviewService:
             current_step=current_step,
             previous_question=curr_q.get("question_text", ""),
             user_answer=data.user_answer,
-            difficulty=session["difficulty"]
+            difficulty=session["difficulty"],
+            total_steps=total_steps
         )
 
         session["current_step"] = adaptive_result.step
         if adaptive_result.next_question:
-            session["current_question"] = adaptive_result.next_question.dict()
+            session["current_question"] = adaptive_result.next_question.model_dump()
 
         return adaptive_result
 
@@ -164,7 +165,7 @@ class InterviewService:
         if not session:
             return 100
 
-        session["integrity_events"].append(event.dict())
+        session["integrity_events"].append(event.model_dump())
 
         # Objective deductions:
         # TAB_SWITCH / WINDOW_BLUR: -4 pts

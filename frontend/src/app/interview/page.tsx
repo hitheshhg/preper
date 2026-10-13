@@ -76,7 +76,7 @@ export default function InterviewSetupPage() {
 
       
 
-        <main className="flex-1 max-w-5xl mx-auto w-full px-6 sm:px-12 py-10 lg:py-14 space-y-12 max-w-4xl overflow-y-auto">
+        <main className="flex-1 max-w-5xl mx-auto w-full px-6 sm:px-12 py-10 lg:py-14 space-y-12 overflow-y-auto">
           {/* Header */}
           <div className="space-y-4 border-b border-border pb-8">
             <SectionLabel number="01" label="Choose Your Challenge" />

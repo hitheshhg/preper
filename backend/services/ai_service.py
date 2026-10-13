@@ -497,7 +497,8 @@ class AIService:
             coach_feedback=CoachReaction(
                 state="encouraging",
                 message=f"I've completed an ATS audit of your resume! Your technical foundation is solid for {target_role}. Adding measurable impact metrics will elevate your profile into the top quartile."
-            )
+            ),
+            raw_text=raw_text
         )
 
     def generate_tailored_summary(self, resume_text: str, target_role: str = "Software Development Engineer") -> TailoredSummaryResponse:
@@ -696,9 +697,9 @@ class AIService:
         current_step: int,
         previous_question: str,
         user_answer: str,
-        difficulty: str
+        difficulty: str,
+        total_steps: int = 5
     ) -> AdaptiveNextQuestionResponse:
-        total_steps = 5
         if current_step >= total_steps:
             return AdaptiveNextQuestionResponse(
                 is_completed=True,
@@ -706,7 +707,7 @@ class AIService:
                 total_steps=total_steps,
                 is_followup=False,
                 adapted_difficulty=difficulty,
-                immediate_feedback="Outstanding effort! You have completed all 5 questions. Let's review your in-depth performance report.",
+                immediate_feedback=f"Outstanding effort! You have completed all {total_steps} questions. Let's review your in-depth performance report.",
                 coach_reaction=CoachReaction(
                     state="celebrating",
                     message="Fantastic work! You powered through the interview. Generating your comprehensive readiness scorecard now!"
@@ -820,7 +821,7 @@ class AIService:
             )
         ]
 
-        q_idx = min(current_step - 1, len(fallback_questions) - 1)
+        q_idx = max(0, (current_step - 1) % len(fallback_questions))
         selected_q = fallback_questions[q_idx]
 
         return AdaptiveNextQuestionResponse(
@@ -1024,7 +1025,7 @@ class AIService:
             integrity_score=100
         )
         return InterviewEvaluationResponse(
-            **detailed.dict(),
+            **detailed.model_dump(),
             model_answer_highlights="A standout answer begins by explicitly stating the trade-off, compares alternatives, and grounds the solution in real production constraints.",
             recommended_practice=detailed.actionable_recommendations
         )

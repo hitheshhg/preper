@@ -3,6 +3,7 @@
 import { getCurrentUser } from './auth';
 import { getDashboardMetrics } from '@/lib/metrics';
 import { prisma } from '@/lib/db/client';
+import { devDb } from '@/lib/db/dev-store';
 
 export async function getDashboardDataAction() {
   const user = await getCurrentUser();
@@ -74,7 +75,10 @@ export async function getDashboardDataAction() {
         : null,
     };
   } catch (err) {
-    console.warn('[Prepr Dashboard] Prisma offline or error, returning baseline telemetry:', err);
+    console.warn('[Prepr Dashboard] Prisma offline or error, pulling from devDb:', err);
+    const devResumes = devDb.getUserResumes(user.id);
+    const devInterviews = devDb.getUserInterviews(user.id);
+    const latestDevResume = devResumes[0] as any;
     return {
       authenticated: true,
       user: {
@@ -85,20 +89,37 @@ export async function getDashboardDataAction() {
       },
       metrics: {
         readinessScore: 78,
-        interviewsCompleted: 3,
-        resumesAnalyzed: 1,
+        interviewsCompleted: devInterviews.length || 3,
+        resumesAnalyzed: devResumes.length || 1,
         averageScore: 82,
-        atsScore: 88,
+        atsScore: latestDevResume?.atsScore ?? 88,
         totalXP: 450,
         level: 2,
         streak: 5,
+        activeStreak: 5,
+        currentStreak: 5,
         targetRole: 'Software Development Engineer',
         recentScores: [75, 80, 84],
         skillStrengths: ['Data Structures', 'System Design'],
         skillGaps: ['Low-Level Design', 'Distributed Systems'],
       },
-      recentInterviews: [],
-      latestResume: null,
+      recentInterviews: devInterviews.map((i: any) => ({
+        id: i.interviewId || i.id,
+        role: (i.role as string) || 'Software Development Engineer',
+        mode: (i.mode as string) || 'Technical',
+        difficulty: (i.difficulty as string) || 'Medium',
+        status: 'COMPLETED',
+        score: (i.overallScore as number) ?? 80,
+        category: 'Technical Interview',
+        createdAt: i.createdAt,
+      })),
+      latestResume: latestDevResume ? {
+        id: latestDevResume.id,
+        fileName: latestDevResume.fileName || 'candidate_resume.txt',
+        overallScore: latestDevResume.overallScore ?? null,
+        atsScore: latestDevResume.atsScore ?? null,
+        createdAt: latestDevResume.createdAt,
+      } : null,
     };
   }
 }

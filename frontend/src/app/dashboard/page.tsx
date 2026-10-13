@@ -140,7 +140,7 @@ export default function DashboardPage() {
         time_taken_seconds: 45
       });
       setDrillFeedback(
-        res.feedback || 'Good articulation of core invariants. Consider detailing network partition behaviors to reach senior calibration.'
+        res.immediate_feedback || res.coach_reaction?.message || 'Good articulation of core invariants. Consider detailing network partition behaviors to reach senior calibration.'
       );
     } catch (e) {
       setDrillFeedback(

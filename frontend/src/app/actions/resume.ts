@@ -1,6 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/db/client';
+import { devDb } from '@/lib/db/dev-store';
 import { getCurrentUser } from './auth';
 import { revalidatePath } from 'next/cache';
 
@@ -75,11 +76,28 @@ export async function saveResumeAnalysisAction(data: SaveResumeInput) {
     revalidatePath('/dashboard');
     revalidatePath('/resume');
     revalidatePath('/analytics');
-    revalidatePath('/admin');
-
     return { success: true, resumeId: resume.id };
   } catch (err: any) {
-    console.error('[Prepr Resume] Error persisting resume to PostgreSQL:', err);
-    return { success: false, error: err.message };
+    console.warn('[Prepr Resume] Prisma unavailable, saving to devDb fallback:', err.message);
+    const devResume = devDb.saveResume(user.id, {
+      fileName: data.fileName || 'candidate_resume.txt',
+      targetRole: data.targetRole,
+      overallScore: data.overallScore,
+      atsScore: data.atsScore,
+      rawText: data.rawText,
+      recommendations: data.recommendations,
+    });
+    devDb.logAudit({
+      actorId: user.id,
+      action: 'RESUME_ANALYZED',
+      resource: 'Resume',
+      resourceId: devResume.id,
+      metadata: {
+        targetRole: data.targetRole,
+        atsScore: data.atsScore,
+        overallScore: data.overallScore,
+      },
+    });
+    return { success: true, resumeId: devResume.id };
   }
 }

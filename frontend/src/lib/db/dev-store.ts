@@ -36,9 +36,25 @@ export interface DevAuditLog {
   metadata?: Record<string, unknown>;
 }
 
+export interface DevResumeRecord {
+  id: string;
+  userId: string;
+  createdAt: string;
+  [key: string]: unknown;
+}
+
+export interface DevInterviewRecord {
+  id: string;
+  userId: string;
+  createdAt: string;
+  [key: string]: unknown;
+}
+
 interface DevDatabase {
   users: DevUser[];
   auditLogs: DevAuditLog[];
+  resumes?: DevResumeRecord[];
+  interviews?: DevInterviewRecord[];
 }
 
 const DB_FILE = path.join(process.cwd(), '.prepr-dev-db.json');
@@ -47,12 +63,18 @@ function readDb(): DevDatabase {
   try {
     if (fs.existsSync(DB_FILE)) {
       const data = fs.readFileSync(DB_FILE, 'utf-8');
-      return JSON.parse(data);
+      const parsed = JSON.parse(data);
+      return {
+        users: parsed.users || [],
+        auditLogs: parsed.auditLogs || [],
+        resumes: parsed.resumes || [],
+        interviews: parsed.interviews || [],
+      };
     }
   } catch (err) {
     console.warn('[Prepr DevDB] Failed to read dev db file, creating new state:', err);
   }
-  return { users: [], auditLogs: [] };
+  return { users: [], auditLogs: [], resumes: [], interviews: [] };
 }
 
 function writeDb(db: DevDatabase) {
@@ -135,5 +157,53 @@ export const devDb = {
   getAuditLogs() {
     const db = readDb();
     return db.auditLogs;
+  },
+
+  saveResume(userId: string, data: Record<string, unknown>) {
+    const db = readDb();
+    if (!db.resumes) db.resumes = [];
+    const entry = {
+      id: `res_${Date.now()}`,
+      userId,
+      createdAt: new Date().toISOString(),
+      ...data,
+    };
+    db.resumes.unshift(entry);
+    writeDb(db);
+    return entry;
+  },
+
+  saveInterview(userId: string, data: Record<string, unknown>) {
+    const db = readDb();
+    if (!db.interviews) db.interviews = [];
+    const entry = {
+      id: `int_${Date.now()}`,
+      userId,
+      createdAt: new Date().toISOString(),
+      ...data,
+    };
+    db.interviews.unshift(entry);
+    writeDb(db);
+    return entry;
+  },
+
+  getUserResumes(userId: string): DevResumeRecord[] {
+    const db = readDb();
+    return (db.resumes || []).filter(r => r.userId === userId);
+  },
+
+  getUserInterviews(userId: string): DevInterviewRecord[] {
+    const db = readDb();
+    return (db.interviews || []).filter(i => i.userId === userId);
+  },
+
+  getAllResumes(): DevResumeRecord[] {
+    const db = readDb();
+    return db.resumes || [];
+  },
+
+  getAllInterviews(): DevInterviewRecord[] {
+    const db = readDb();
+    return db.interviews || [];
   },
 };

@@ -84,7 +84,12 @@ def get_achievements(user_id: str = "demo-user-123"):
 
 @router.post("/quests/{quest_id}/claim")
 def claim_quest_reward(quest_id: str, user_id: str = "demo-user-123"):
-    reward_xp = 50
+    quest_xp_map = {
+        "quest-1": 60,
+        "quest-2": 50,
+        "quest-3": 75,
+    }
+    reward_xp = quest_xp_map.get(quest_id, 50)
     if user_id in USER_PROFILES:
         USER_PROFILES[user_id]["total_xp"] += reward_xp
         # Level up check: every 300 XP = 1 Level

@@ -9,6 +9,7 @@ from backend.schemas.models import (
     ImprovedBullet
 )
 from backend.services.ai_service import ai_service
+from backend.services.readiness_engine import ReadinessEngine
 from backend.api.auth import USER_PROFILES
 
 logger = logging.getLogger(__name__)
@@ -90,23 +91,27 @@ class ResumeService:
         if user_id in USER_PROFILES:
             profile = USER_PROFILES[user_id]
             profile["resume_score"] = analysis.detailed_scores.ats_compatibility.score
-            # Recalculate overall readiness
+            # Recalculate overall readiness using central ReadinessEngine
             tech = profile.get("technical_score", 60)
             code = profile.get("coding_score", 60)
             comm = profile.get("communication_score", 70)
             hr = profile.get("hr_score", 75)
             res_sc = profile["resume_score"]
             ps = profile.get("problem_solving_score", 60)
-            weighted = int(
-                tech * 0.20 +
-                code * 0.15 +
-                comm * 0.15 +
-                hr * 0.10 +
-                res_sc * 0.15 +
-                ps * 0.15 +
-                10  # confidence & consistency
+            conf = profile.get("confidence_level", 60)
+            prev = profile.get("readiness_score")
+
+            final_score, _ = ReadinessEngine.calculate_readiness(
+                technical=tech,
+                coding=code,
+                communication=comm,
+                hr=hr,
+                resume=res_sc,
+                problem_solving=ps,
+                confidence=conf,
+                previous_score=prev
             )
-            profile["readiness_score"] = min(99, max(40, weighted))
+            profile["readiness_score"] = final_score
             profile["total_xp"] = profile.get("total_xp", 450) + 75
 
         return analysis

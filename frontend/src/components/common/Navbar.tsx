@@ -9,7 +9,9 @@ import {
   User,
   Shield,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  BookOpen,
+  Building2
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { logoutAction, getCurrentUser } from '@/app/actions/auth';
@@ -36,10 +38,12 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const navLinks = [
     { href: '/dashboard', label: 'Dashboard' },
-    { href: '/interview', label: 'Practice' },
-    { href: '/resume', label: 'Resume' },
-    { href: '/analytics', label: 'Progress' },
-    { href: '/profile', label: 'Profile' },
+    { href: '/interview', label: 'Interviews' },
+    { href: '/gd', label: 'GD Simulator' },
+    { href: '/resume', label: 'Resume ATS' },
+    { href: '/coach', label: 'AI Coach' },
+    { href: '/roadmap', label: 'Roadmap' },
+    { href: '/analytics', label: 'Analytics' },
   ];
 
   useEffect(() => {
@@ -156,6 +160,24 @@ export const Navbar: React.FC<NavbarProps> = ({
                   >
                     <User className="w-3.5 h-3.5 text-foreground-muted" />
                     <span>Candidate Profile</span>
+                  </Link>
+
+                  <Link
+                    href="/questions"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-foreground hover:bg-surface-muted transition-colors"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-foreground-muted" />
+                    <span>Question Bank</span>
+                  </Link>
+
+                  <Link
+                    href="/companies"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-foreground hover:bg-surface-muted transition-colors"
+                  >
+                    <Building2 className="w-3.5 h-3.5 text-foreground-muted" />
+                    <span>Company Tracks</span>
                   </Link>
 
                   {currentUser.role === 'ADMIN' && (

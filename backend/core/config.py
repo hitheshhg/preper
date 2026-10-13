@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     
     # AI Credentials
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
     
     # Server configuration
     BACKEND_HOST: str = os.getenv("BACKEND_HOST", "0.0.0.0")
@@ -20,7 +20,6 @@ class Settings(BaseSettings):
         "http://localhost:3001",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:3001",
-        "*"
     ]
     
     # Supabase (Optional on server-side if using client-side auth & token validation)
